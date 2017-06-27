@@ -16,8 +16,8 @@ class NormalDist(Model):
 def log_prost(x):
     return -0.5*np.sum(x**2)
 
-num_dims = 5
-num_walkers = 20
+num_dims = 64
+num_walkers = 2*num_dims
 num_samples = 10000
 
 em_sampler = emcee.EnsembleSampler(num_walkers, num_dims, log_prost)

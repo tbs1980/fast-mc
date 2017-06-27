@@ -1,6 +1,4 @@
 import numpy as np
-from math import log
-from fast_mc.chain import Chain
 
 
 class EnsembleSampler(object):
@@ -19,7 +17,6 @@ class EnsembleSampler(object):
         self._a = a
         self._samples = None
         self._weights = None
-        self._acceptance = None
 
     def run(self, num_samples, start_points):
         if start_points.shape[0] != self._num_walkers:
@@ -32,36 +29,31 @@ class EnsembleSampler(object):
 
         log_probs = np.array([self._model.compute_log_posterior(x) for x in start_points])
 
-        num_accepted = 0
-        num_rejected = 0
-        half_k = int(self._num_walkers/2)
-        while num_accepted < num_samples:
-            acc = np.zeros(self._num_walkers, dtype=bool)
-            for i in range(2):
-                for k in range(half_k*i, half_k*i + half_k):
-                    j = np.random.randint((1-i)*half_k, (1-i)*half_k+half_k)
-                    x_j = start_points[j, :]
-                    x_k = start_points[k, :]
-                    u = np.random.uniform()
-                    z = ((u*(self._a - 1.) + 1.)**2.)/self._a
-                    # lp_x_k = log_probs[k]
-                    y = x_j + z*(x_k - x_j)
-                    lp_y = self._model.compute_log_posterior(y)
-                    # log_q = (self._num_dims - 1)*log(z) + lp_y - log_probs[k]
-                    # log_r = log(np.random.uniform())
-                    if log(np.random.uniform()) <= (self._num_dims - 1)*log(z) + lp_y - log_probs[k]:
-                        start_points[k, :] = y
-                        log_probs[k] = lp_y
-                        acc[k] = True
+        for sample in range(num_samples):
+            half_num_walkers = int(self._num_walkers / 2)
+            first, second = slice(half_num_walkers), slice(half_num_walkers, self._num_walkers)
 
-            if acc.any():
-                self._samples[num_accepted, :, :] = start_points
-                self._weights[num_accepted, :] = log_probs
-                num_accepted += 1
-            else:
-                num_rejected += 1
+            for slice_1, slice_2 in [(first, second), (second, first)]:
+                set_1 = np.atleast_2d(start_points[slice_1])
+                log_probs_set_1 = log_probs[slice_1]
+                num_walkers_1 = len(set_1)
+                set_2 = np.atleast_2d(start_points[slice_2])
+                num_walkers_2 = len(set_2)
 
-        self._acceptance = float(num_accepted) / float(num_accepted + num_rejected)
+                rand_z_val = ((self._a - 1.) * np.random.rand(num_walkers_1) + 1) ** 2. / self._a
+                random_selection_2 = np.random.randint(num_walkers_2, size=(num_walkers_1,))
+
+                proposal = set_2[random_selection_2] - rand_z_val[:, np.newaxis] * (set_2[random_selection_2] - set_1)
+                new_log_probs = np.array([self._model.compute_log_posterior(q_i) for q_i in proposal])
+
+                delta_log_probs = (self._num_dims - 1.) * np.log(rand_z_val) + new_log_probs - log_probs_set_1
+                accept = (delta_log_probs > np.log(np.random.rand(len(delta_log_probs))))
+
+                if np.any(accept):
+                    log_probs[slice_1][accept] = new_log_probs[accept]
+                    start_points[slice_1][accept] = proposal[accept]
+                    self._samples[sample, :, :] = start_points
+                    self._weights[sample, :] = log_probs
 
     @property
     def samples(self):
@@ -70,8 +62,3 @@ class EnsembleSampler(object):
     @property
     def weights(self):
         return self._weights
-
-    @property
-    def acceptance(self):
-        return self._acceptance
-

@@ -21,7 +21,7 @@ class TestMvp(TestCase):
         pass
 
     def test_ensemble(self):
-        num_dims = 5
+        num_dims = 1
         num_walkers = 20
         nrm_dst = NormalDist()
         sampler = EnsembleSampler(nrm_dst, num_walkers=num_walkers, num_dims=num_dims)
@@ -29,10 +29,7 @@ class TestMvp(TestCase):
         num_samples = 10000
         sampler.run(num_samples=num_samples, start_points=start_points)
 
-        samples = sampler.samples[5000:,:,:].reshape(-1, 5)
-        print(samples[:, 0].shape)
-        print(samples[:, 0].mean(), samples[:, 0].var())
-        # print(stats.norm.rvs(size=2000).shape)
-        print(stats.kstest(samples[:, 0], 'norm'))
-        print(stats.kstest(stats.norm.rvs(size=100), 'norm'))
+        samples = sampler.samples[5000:, :, :].reshape(-1, num_dims)
+        self.assertLessEqual(abs(samples[:, 0].mean()), 1e-1, "Mean of samples did not converge to zero.")
+        self.assertLessEqual(abs(samples[:, 0].var() - 1.), 1e-1, "Variance of samples did not converge to one.")
 

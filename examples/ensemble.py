@@ -20,7 +20,7 @@ sampler = EnsembleSampler(nrm_dst, num_walkers=num_walkers, num_dims=num_dims)
 start_points = np.array([np.random.rand(num_dims) for _ in range(num_walkers)])
 num_samples = 10000
 sampler.run(num_samples=num_samples, start_points=start_points)
-# samples = sampler.samples.reshape(-1, 5)
-#
-# plt.hist(samples[:, 0])
-# plt.show()
+samples = sampler.samples.reshape(-1, 5)
+
+plt.hist(samples[:, 0])
+plt.show()
