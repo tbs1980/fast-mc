@@ -38,7 +38,6 @@ class RiemannianManifoldHamiltonianSampler(object):
         det_metric_tensor = np.linalg.det(metric_tensor)
         inv_metric_tensor = np.linalg.inv(metric_tensor)
         log_post_x_0 = self._model.compute_log_posterior(q_0)
-        log_post_x_0_temp = self._model.compute_log_posterior(q_0)
 
         while num_accepted < num_samples:
             p_0 = np.random.multivariate_normal(mean=np.zeros(self._num_dims), cov=metric_tensor)
