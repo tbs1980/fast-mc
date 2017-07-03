@@ -35,7 +35,7 @@ sampler = RiemannianManifoldHamiltonianSampler(model=nrm_dst, num_dims=num_dims,
                                                num_fixed_point_steps=num_fixed_point_steps)
 
 
-num_samples = 1000
+num_samples = 10000
 q_0 = np.random.normal(size=num_dims)
 sampler.run(num_samples=num_samples, q_0=q_0)
 samples = sampler.samples
