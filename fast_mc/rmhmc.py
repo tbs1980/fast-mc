@@ -37,6 +37,11 @@ class RiemannianManifoldHamiltonianSampler(object):
         while num_accepted < num_samples:
             metric_tensor = self._model.compute_metric_tensor(q_0)
             p_0 = np.random.multivariate_normal(mean=np.zeros(self._num_dims), cov=metric_tensor)
+
+            # Stomer-Verlet starts here
+            q_1 = np.copy(q_0)
+            p_1 = np.copy(p_0)
+
             step_size = np.random.uniform(low=0., high=self._max_epsilon)
             num_leap_frog_steps = np.random.randint(1, self._max_leapfrog_stps+1)
 
@@ -49,10 +54,8 @@ class RiemannianManifoldHamiltonianSampler(object):
             if not np.isfinite(h_0):
                 raise ValueError('Initial Hamiltonian is not finite.')
 
-            deriv_metric_tensor = self._model.compute_deriv_metric_tensor(q_0)
+            deriv_metric_tensor = self._model.compute_deriv_metric_tensor(q_1)
 
-            q_1 = np.copy(q_0)
-            p_1 = np.copy(p_0)
             for _ in range(num_leap_frog_steps):
                 d_g_inv_g = np.dot(deriv_metric_tensor, inv_metric_tensor)
                 trace = np.trace(d_g_inv_g)
@@ -61,7 +64,7 @@ class RiemannianManifoldHamiltonianSampler(object):
                 p_0 = np.copy(p_1)
                 for __ in range(self._num_fixed_point_steps):
                     nu = np.dot(p_1, np.dot(grad_inv_metric_tensor, p_1))
-                    p_1 = p_0 - step_size*0.5*(-self._model.compute_grad_log_posterior(q_0) + 0.5*trace - 0.5*nu)
+                    p_1 = p_0 - step_size*0.5*(-self._model.compute_grad_log_posterior(q_1) + 0.5*trace - 0.5*nu)
 
                     if np.linalg.norm(p_0/np.linalg.norm(p_0) - p_1/np.linalg.norm(p_1)) < norm_threshold:
                         break
@@ -70,7 +73,8 @@ class RiemannianManifoldHamiltonianSampler(object):
                 inv_metric_tensor_1 = np.copy(inv_metric_tensor)
                 for __ in range(self._num_fixed_point_steps):
                     q_1 = q_0 + step_size*0.5*np.dot(inv_metric_tensor + inv_metric_tensor_1, p_1)
-                    inv_metric_tensor_1 = np.linalg.inv(self._model.compute_metric_tensor(q_1))
+                    metric_tensor = self._model.compute_metric_tensor(q_1)
+                    inv_metric_tensor_1 = np.linalg.inv(metric_tensor)
 
                     if np.linalg.norm(q_0/np.linalg.norm(q_0) - q_1/np.linalg.norm(q_1)) < norm_threshold:
                         break
@@ -86,7 +90,9 @@ class RiemannianManifoldHamiltonianSampler(object):
 
             log_post_x_1 = self._model.compute_log_posterior(q_1)
             det_metric_tensor = np.linalg.det(metric_tensor)
-            h_1 = -log_post_x_1 + log(det_metric_tensor) + 0.5*(np.dot(p_0, np.dot(inv_metric_tensor, p_0)))
+            h_1 = -log_post_x_1 + log(det_metric_tensor) + 0.5*(np.dot(p_1, np.dot(inv_metric_tensor, p_1)))
+
+            # Stomer-Verlet ends here
 
             if log(np.random.uniform()) < (h_1 - h_0):
                 q_0 = np.copy(q_1)
