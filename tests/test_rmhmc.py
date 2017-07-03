@@ -46,6 +46,6 @@ class TestMvp(TestCase):
         q_0 = np.random.normal(size=num_dims)
         sampler.run(num_samples=num_samples, q_0=q_0)
         samples = sampler.samples
-        self.assertLessEqual(abs(samples[:, 0].mean()), 1e-1, "Mean of samples did not converge to zero.")
+        self.assertLessEqual(abs(samples[num_burn:, 0].mean()), 1e-1, "Mean of samples did not converge to zero.")
         self.assertLessEqual(abs(sqrt(samples[num_burn:, 0].var()) - 1.), 0.5,
                              "Variance of samples did not converge to one.")
