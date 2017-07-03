@@ -66,8 +66,8 @@ class RiemannianManifoldHamiltonianSampler(object):
                 for __ in range(self._num_fixed_point_steps):
                     nu = np.dot(p_1, np.dot(grad_inv_metric_tensor, p_1))
                     p_1 = p_temp - step_size*0.5*(-grad_log_post_x_1 + 0.5*trace - 0.5*nu)
-                    if np.linalg.norm(p_temp/norm_p_temp - p_1/np.linalg.norm(p_1)) < norm_threshold:
-                        break
+                    # if np.linalg.norm(p_temp/norm_p_temp - p_1/np.linalg.norm(p_1)) < norm_threshold:
+                    #     break
 
                 q_temp = q_1
                 norm_q_temp = np.linalg.norm(q_temp)
@@ -76,8 +76,8 @@ class RiemannianManifoldHamiltonianSampler(object):
                     q_1 = q_temp + step_size*0.5*np.dot(inv_metric_tensor + inv_metric_tensor_1, p_1)
                     metric_tensor = self._model.compute_metric_tensor(q_1)
                     inv_metric_tensor_1 = np.linalg.inv(metric_tensor)
-                    if np.linalg.norm(q_temp/norm_q_temp - q_1/np.linalg.norm(q_1)) < norm_threshold:
-                        break
+                    # if np.linalg.norm(q_temp/norm_q_temp - q_1/np.linalg.norm(q_1)) < norm_threshold:
+                    #     break
 
                 inv_metric_tensor = inv_metric_tensor_1
                 deriv_metric_tensor = self._model.compute_deriv_metric_tensor(q_1)
