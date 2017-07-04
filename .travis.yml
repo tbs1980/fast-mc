@@ -9,6 +9,6 @@ install:
   - pip install -r requirements_dev.txt
 script:
   # Normal tests
-  - pytest --cov=fast_mc
+  - PYTHONPATH=. pytest --cov=fast_mc
 after_success:
   - codecov
