@@ -1,0 +1,14 @@
+sudo: false
+language: python
+python:
+  - "3.5"
+install:
+  # Build/test dependencies
+  - pip install codecov
+  - pip install -r requirements.txt
+  - pip install -r requirements_dev.txt
+script:
+  # Normal tests
+  - PYTHONPATH=. pytest --cov=fast_mc
+after_success:
+  - codecov
